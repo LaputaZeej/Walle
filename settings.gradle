@@ -1,0 +1,3 @@
+include ':bugu-walle'
+include ':app'
+rootProject.name = "Bugu-walle"

@@ -4,6 +4,11 @@ import com.bugu.walle.extension.formatDate
 
 
 sealed class Message(open val time: Long, open val tag: String, open val msg: String) {
+    data class AppInfoMessage(
+        override val time: Long,
+        override val tag: String,
+        override val msg: String
+    ) : Message(time, tag, msg)
 
     data class NormalMessage(
         override val time: Long,
@@ -17,7 +22,7 @@ sealed class Message(open val time: Long, open val tag: String, open val msg: St
         override val msg: String
     ) : Message(time, tag, msg)
 
-    data class OkHttpErrorMessage(
+    data class OkHttpMessage(
         override val time: Long,
         override val tag: String,
         override val msg: String
@@ -25,4 +30,4 @@ sealed class Message(open val time: Long, open val tag: String, open val msg: St
 }
 
 val Message.simpleMsg
-    get() = "【${formatDate(time)}】【${tag}】  ${msg}"
+    get() = "[${formatDate(time)}][${tag}]-${msg}"

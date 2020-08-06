@@ -1,4 +1,4 @@
-package com.bugu.walle.overlay
+package com.bugu.walle.core
 
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData

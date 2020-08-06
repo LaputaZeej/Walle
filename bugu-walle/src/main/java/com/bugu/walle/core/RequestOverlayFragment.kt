@@ -1,4 +1,4 @@
-package com.bugu.walle.overlay
+package com.bugu.walle.core
 
 import android.content.Intent
 import android.os.Build
@@ -15,7 +15,8 @@ import kotlinx.coroutines.launch
 
 class RequestOverlayFragment : Fragment() {
 
-    private var mRequestCode: Int = DEFAULT_REQUEST
+    private var mRequestCode: Int =
+        DEFAULT_REQUEST
     lateinit var viewModel: RequestOverlayViewModel
     private var explain = true
 
@@ -83,7 +84,8 @@ class RequestOverlayFragment : Fragment() {
     companion object {
         private const val DEFAULT_REQUEST = 0xFC
         private const val REQUEST_CODE = "request_code"
-        fun newInstance(requestCode: Int = DEFAULT_REQUEST) = RequestOverlayFragment().apply {
+        fun newInstance(requestCode: Int = DEFAULT_REQUEST) = RequestOverlayFragment()
+            .apply {
             this.arguments = bundleOf(REQUEST_CODE to requestCode)
         }
     }

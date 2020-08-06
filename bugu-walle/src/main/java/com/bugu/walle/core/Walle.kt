@@ -1,57 +1,99 @@
 package com.bugu.walle.core
 
-import android.content.Context
+import android.app.Application
 import android.widget.Toast
 import androidx.fragment.app.FragmentActivity
-import com.bugu.walle.log.HDLog
-import com.bugu.walle.log.ILog
+import androidx.lifecycle.*
+import com.bugu.walle.extension.viewModels
 import com.bugu.walle.log.Message
-import com.bugu.walle.log.simpleMsg
+import com.bugu.walle.overlay.HDOverlay
 
-object Walle : ILog by HDLog() {
-    private lateinit var mOverlayWindow: OverlayWindow
-    private lateinit var context: Context
-    private val messageList: MutableList<Message> = mutableListOf()
-
-    var debug: Boolean = true
-
-    fun init(context: Context) {
-        this.context = context.applicationContext
-        this.mOverlayWindow = WalleOverlayWindow(context)
+object Walle: LifecycleObserver {
+    lateinit var hdOverlay: HDOverlay
+    fun init(application: Application) {
+        hdOverlay = HDOverlay(application)
+        ProcessLifecycleOwner.get().lifecycle.addObserver(this)
     }
 
+    @OnLifecycleEvent(Lifecycle.Event.ON_START)
+    fun onStart(){
+        //hdOverlay.onSizeChange(true)
+    }
+
+    @OnLifecycleEvent(Lifecycle.Event.ON_STOP)
+    fun onStop(){
+        hdOverlay.onSizeChange(false)
+    }
+
+    private fun checkPermission(activity: FragmentActivity, observer: (Boolean?) -> Unit) {
+        checkOverlay(activity) {
+            observer(it)
+        }
+    }
+
+    private fun checkOverlay(activity: FragmentActivity, observer: (Boolean?) -> Unit) {
+        activity.viewModelStore.clear() // 会创建多个viewModel
+        activity.viewModels<RequestOverlayViewModel>().apply {
+            success.observe(activity, Observer(observer))
+        }
+        activity.supportFragmentManager.beginTransaction()
+            .add(RequestOverlayFragment.newInstance(), "checkOverlay")
+            .commitAllowingStateLoss()
+    }
+
+    @JvmStatic
     fun show(activity: FragmentActivity) {
-        if (!debug) return
-        mOverlayWindow.checkPermission(activity) {
+        checkPermission(activity) {
             if (it == true) {
                 Toast.makeText(activity, "请求成功", Toast.LENGTH_SHORT).show()
-                mOverlayWindow.show()
+                show()
             } else {
                 Toast.makeText(activity, "请求失败", Toast.LENGTH_SHORT).show()
             }
         }
-
     }
 
+    @JvmStatic
+    fun appendNormal(tag: String, msg: String) {
+        append(Message.NormalMessage(System.currentTimeMillis(), tag, msg))
+    }
+
+    @JvmStatic
+    fun appendError(tag: String, msg: String) {
+        append(Message.ErrorMessage(System.currentTimeMillis(), tag, msg))
+    }
+
+    @JvmStatic
+    fun appendOkHttp(tag: String, msg: String) {
+        append(Message.OkHttpMessage(System.currentTimeMillis(), tag, msg))
+    }
+
+    @JvmStatic
+    private fun show() {
+        hdOverlay.show()
+    }
+
+    @JvmStatic
     fun dismiss() {
-        if (!debug) return
-        mOverlayWindow.dismiss()
+        hdOverlay.dismiss()
     }
 
-    internal fun append(msg: Message) {
-        if (!debug) return
-        messageList.add(msg)
-        mOverlayWindow.append(msg.simpleMsg)
+    private fun append(msg: Message) {
+        hdOverlay.append(msg)
     }
 
+    @JvmStatic
     fun clear() {
-        if (!debug) return
-        mOverlayWindow.clear()
+        hdOverlay.clear()
     }
 
-    internal fun update(msg: Message.NormalMessage) {
-        messageList.add(msg)
-        if (!debug) return
-        mOverlayWindow.update(msg.simpleMsg)
+    private fun update(msg: Message) {
     }
+
+    @JvmStatic
+    fun move(x: Int, y: Int) {
+        hdOverlay.move(x, y)
+    }
+
+
 }
