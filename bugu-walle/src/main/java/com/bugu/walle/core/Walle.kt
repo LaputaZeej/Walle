@@ -9,7 +9,7 @@ import com.bugu.walle.log.Message
 import com.bugu.walle.overlay.HDOverlay
 
 object Walle: LifecycleObserver {
-    lateinit var hdOverlay: HDOverlay
+    private var hdOverlay: HDOverlay? = null
     fun init(application: Application) {
         hdOverlay = HDOverlay(application)
         ProcessLifecycleOwner.get().lifecycle.addObserver(this)
@@ -22,7 +22,7 @@ object Walle: LifecycleObserver {
 
     @OnLifecycleEvent(Lifecycle.Event.ON_STOP)
     fun onStop(){
-        hdOverlay.onSizeChange(false)
+        hdOverlay?.onSizeChange(false)
     }
 
     private fun checkPermission(activity: FragmentActivity, observer: (Boolean?) -> Unit) {
@@ -70,21 +70,21 @@ object Walle: LifecycleObserver {
 
     @JvmStatic
     private fun show() {
-        hdOverlay.show()
+        hdOverlay?.show()
     }
 
     @JvmStatic
     fun dismiss() {
-        hdOverlay.dismiss()
+        hdOverlay?.dismiss()
     }
 
     private fun append(msg: Message) {
-        hdOverlay.append(msg)
+        hdOverlay?.append(msg)
     }
 
     @JvmStatic
     fun clear() {
-        hdOverlay.clear()
+        hdOverlay?.clear()
     }
 
     private fun update(msg: Message) {
@@ -92,7 +92,7 @@ object Walle: LifecycleObserver {
 
     @JvmStatic
     fun move(x: Int, y: Int) {
-        hdOverlay.move(x, y)
+        hdOverlay?.move(x, y)
     }
 
 

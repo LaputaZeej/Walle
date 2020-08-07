@@ -16,6 +16,7 @@ import com.bugu.walle.extension.screenWidth
 import com.bugu.walle.log.Message
 import com.bugu.walle.log.simpleMsg
 import kotlinx.android.synthetic.main.view_walle.view.*
+import kotlin.math.abs
 import kotlin.random.Random
 
 /**
@@ -105,13 +106,12 @@ class HDOverlay(application: Application, resId: Int = -1) :
                 }
                 MotionEvent.ACTION_MOVE -> {
                     if (mDrag) {
-                        //val scaledTouchSlop = ViewConfiguration.get(mContext).scaledTouchSlop
-                        val scaledTouchSlop = 0
+                        val scaledTouchSlop = ViewConfiguration.get(mContext).scaledTouchSlop
                         val moveX = event.rawX
                         val moveY = event.rawY
                         val offsetX = moveX - downX
                         val offsetY = moveY - downY
-                        if (!(offsetX < scaledTouchSlop && offsetY < scaledTouchSlop)) {
+                        if (!(abs(offsetX) < scaledTouchSlop && abs(offsetY) < scaledTouchSlop)) {
                             moveBy(offsetX.toInt(), offsetY.toInt())
                             downX = moveX
                             downY = moveY
@@ -149,14 +149,17 @@ class HDOverlay(application: Application, resId: Int = -1) :
                                 }
 
                             }
-
+                            val viewHeight = view.measuredHeight
+                            val topLimit = mContext.screenHeight / 10
+                            val bottomLimit = mContext.screenHeight * 9 / 10
+                            Log.i(TAG, "lastY = $lastY bottomLimit=$bottomLimit topLimit=$topLimit")
                             val finalY: Float = when {
 
-                                lastY < defaultY -> {
-                                    defaultY.toFloat()
+                                lastY < topLimit -> {
+                                    topLimit.toFloat()
                                 }
-                                lastY >= mContext.screenHeight * 4 / 5f -> {
-                                    mContext.screenHeight * 4 / 5f
+                                lastY >= bottomLimit.toFloat() - viewHeight -> {
+                                    bottomLimit.toFloat() - viewHeight
                                 }
                                 else -> {
                                     lastY

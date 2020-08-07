@@ -27,6 +27,18 @@ val Context.screenWidth: Int
 val Context.screenHeight: Int
     get() = resources.displayMetrics.heightPixels
 
+/**
+ * 状态栏高度
+ */
+val Context.statusBarHeight: Int
+    get() = resources.getDimensionPixelSize(
+        resources.getIdentifier(
+            "status_bar_height",
+            "dimen",
+            "android"
+        )
+    )
+
 fun Fragment.requestOverlayPermission(requestCode: Int) {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
         startActivityForResult(
@@ -46,6 +58,7 @@ inline fun <reified T : ViewModel> ViewModelStoreOwner.viewModels(factory: ViewM
 
 @SuppressLint("SimpleDateFormat")
 val SDF = SimpleDateFormat("yyyy-MM-dd HH:mm:ss sss")
+
 @SuppressLint("SimpleDateFormat")
 val SDF_SIMPLE = SimpleDateFormat("HH:mm:ss sss")
 
@@ -54,7 +67,7 @@ fun formatDate(time: Long, detail: Boolean = false): String = detail.run {
 }.format(time)
 
 val Context.appInfo: String
-    get() = "${Build.MANUFACTURER}/${Build.MODEL}/${Build.DEVICE}/${Build.DISPLAY}/${versionExt}/${Build.VERSION.SDK_INT}"
+    get() = "${Build.MANUFACTURER}/${Build.MODEL}/${Build.DEVICE}/${Build.DISPLAY}/${versionExt}/${Build.VERSION.SDK_INT}/${screenWidth}*${screenHeight}/${statusBarHeight}"
 
 val Context.versionExt: String
     get() = packageManager.getPackageInfo(packageName, 0).run {
