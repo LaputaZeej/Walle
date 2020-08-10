@@ -7,6 +7,7 @@ import androidx.lifecycle.*
 import com.bugu.walle.extension.viewModels
 import com.bugu.walle.log.LogLevelEnum
 import com.bugu.walle.log.Message
+import com.bugu.walle.log.WalleUncaughtExceptionHandler
 import com.bugu.walle.overlay.HDOverlay
 
 object Walle : LifecycleObserver {
@@ -17,15 +18,15 @@ object Walle : LifecycleObserver {
 
     fun init(application: Application, configuration: Configuration? = null) {
         hdOverlay = HDOverlay(application)
+        Thread.setDefaultUncaughtExceptionHandler(WalleUncaughtExceptionHandler())
         ProcessLifecycleOwner.get().lifecycle.addObserver(this)
+    }
+
+    fun start() {
         opened = true
     }
 
-    fun start(){
-        opened = true
-    }
-
-    fun stop(){
+    fun stop() {
         opened = false
         clear()
     }
@@ -40,6 +41,12 @@ object Walle : LifecycleObserver {
     fun onStop() {
         hdOverlay?.onSizeChange(false)
     }
+
+    @OnLifecycleEvent(Lifecycle.Event.ON_DESTROY)
+    fun onDestroy() {
+        dismiss()
+    }
+
 
     private fun checkPermission(activity: FragmentActivity, observer: (Boolean?) -> Unit) {
         checkOverlay(activity) {
@@ -63,7 +70,6 @@ object Walle : LifecycleObserver {
             if (it == true) {
                 Toast.makeText(activity, "请求成功", Toast.LENGTH_SHORT).show()
                 show()
-                show()
             } else {
                 Toast.makeText(activity, "请求失败", Toast.LENGTH_SHORT).show()
             }
@@ -72,60 +78,61 @@ object Walle : LifecycleObserver {
 
     @JvmStatic
     fun error(tag: String, msg: String) {
-        if (!opened)return
+        if (!opened) return
         append(Message.ErrorMessage(System.currentTimeMillis(), tag, msg))
     }
 
     @JvmStatic
     fun okHttp(msg: String) {
-        if (!opened)return
+        if (!opened) return
         append(Message.OkHttpMessage(System.currentTimeMillis(), msg))
     }
 
     @JvmStatic
     private fun append(tag: String, msg: String, level: LogLevelEnum) {
-        if (!opened)return
+        if (!opened) return
         append(Message.NormalMessage(System.currentTimeMillis(), tag, msg, level))
     }
 
     @JvmStatic
     fun v(tag: String, msg: String) {
-        if (!opened)return
+        if (!opened) return
         append(tag, msg, LogLevelEnum.VERBOSE)
     }
 
     @JvmStatic
     fun d(tag: String, msg: String) {
-        if (!opened)return
+        if (!opened) return
         append(tag, msg, LogLevelEnum.DEBUG)
     }
 
     @JvmStatic
     fun i(tag: String, msg: String) {
-        if (!opened)return
+        if (!opened) return
         append(tag, msg, LogLevelEnum.INFO)
     }
 
     @JvmStatic
     fun w(tag: String, msg: String) {
-        if (!opened)return
+        if (!opened) return
         append(tag, msg, LogLevelEnum.WARN)
     }
 
     @JvmStatic
     fun e(tag: String, msg: String) {
-        if (!opened)return
+        if (!opened) return
         append(tag, msg, LogLevelEnum.ERROR)
     }
 
     @JvmStatic
     fun a(tag: String, msg: String) {
-        if (!opened)return
+        if (!opened) return
         append(tag, msg, LogLevelEnum.ASSERT)
     }
 
     @JvmStatic
     private fun show() {
+        start()
         hdOverlay?.show()
     }
 

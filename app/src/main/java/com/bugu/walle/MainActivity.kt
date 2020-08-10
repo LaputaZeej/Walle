@@ -38,8 +38,9 @@ class MainActivity : AppCompatActivity() {
                 }
             }
 
-            delay(5000)
+            delay(15000)
             //Walle.clear()
+            val i = 10 / 0
 
             delay(30 * 1000)
             //Walle.dismiss()
