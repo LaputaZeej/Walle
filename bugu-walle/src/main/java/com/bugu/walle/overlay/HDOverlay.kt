@@ -5,19 +5,19 @@ import android.app.Application
 import android.content.ClipData
 import android.graphics.PixelFormat
 import android.graphics.Rect
-import android.util.Log
+import android.text.Editable
 import android.view.*
 import android.widget.Toast
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.bugu.walle.BuildConfig
 import com.bugu.walle.R
-import com.bugu.walle.extension.appInfo
-import com.bugu.walle.extension.screenHeight
-import com.bugu.walle.extension.screenWidth
+import com.bugu.walle.extension.*
+import com.bugu.walle.log.HDLog
+import com.bugu.walle.log.LogLevelEnum
 import com.bugu.walle.log.Message
 import com.bugu.walle.log.simpleMsg
 import kotlinx.android.synthetic.main.view_walle.view.*
 import kotlin.math.abs
-import kotlin.random.Random
 
 /**
  * Walle 悬浮窗口
@@ -25,12 +25,23 @@ import kotlin.random.Random
 class HDOverlay(application: Application, resId: Int = -1) :
     AbstractOverlay<Message>(application, resId) {
     private var mAdapter: MessageAdapter? = null
+    private var mSettingAdapter: SettingAdapter<Item>? = null
+    private var mSettingSecondAdapter: SettingAdapter<Item>? = null
+    private var mLogLevelAdapter: SettingAdapter<LogLevelEnum>? = null
     private val mMessageList: MutableList<Message> = mutableListOf()
+
+    // 展开
     private var mSpread: Boolean = true
+
+    // 自动刷新
+    private var mAuto: Boolean = true
     private val overlayWidth: Float
     private val overlayHeight: Float
     private val defaultX: Int
     private val defaultY: Int
+    private var mLogLevel: LogLevelEnum = LogLevelEnum.VERBOSE
+    private var mFilter: FilterMode = FilterMode.ALL
+    private var mFilterText: String = ""
 
     init {
         overlayWidth = mContext.resources.getDimension(R.dimen.overlay_width)
@@ -39,37 +50,245 @@ class HDOverlay(application: Application, resId: Int = -1) :
         defaultY = mContext.screenHeight * 1 / 5
     }
 
+    private fun settingData(): List<SettingItem<Item>> {
+
+        return listOf(
+            SettingItem<Item>(
+                Item.TagModeItem.text, Item.TagModeItem, createSettingItemList(
+                    Item.AllTagModelItem,
+                    Item.HideDateItem, Item.HideTagItem
+                )
+            ),
+            SettingItem<Item>(
+                Item.FilterItem.text,
+                Item.FilterItem, createSettingItemList(
+                    Item.NoneFilterItem,
+                    Item.OnlyOkHttpFilterItem, Item.OnlyErrorFilterItem
+                )
+            ),
+            SettingItem<Item>(Item.MoreItem.text, Item.MoreItem, listOf())
+        )
+    }
+
+    private fun createSettingItemList(vararg items: Item): List<SettingItem<Item>> = items.map {
+        SettingItem(it.text, it, listOf())
+    }
+
+
     override fun initView(view: View) {
         with(view) {
-
             tv_app_info.text = mContext.appInfo
+            tv_app_version.text = "v${BuildConfig.VERSION_NAME}"
+            // 日志
             recycler.layoutManager = LinearLayoutManager(mContext)
             mAdapter = MessageAdapter(mutableListOf()).also {
                 recycler.adapter = it
             }
+            // 设置菜单
+            recycler_setting.layoutManager = LinearLayoutManager(mContext)
+            mSettingAdapter = SettingAdapter<Item>(mutableListOf()).also {
+                recycler_setting.adapter = it
+                it.mOnItemClickListener = { _, data ->
+                    val items = data.items
+                    mSettingSecondAdapter?.setNewData(items)
+                }
+            }
+            // 设置二级菜单
+            recycler_setting_second.layoutManager = LinearLayoutManager(mContext)
+            mSettingSecondAdapter = SettingAdapter<Item>(mutableListOf()).also {
+                it.mOnItemClickListener = { _, data ->
+                    when (data.data) {
+                        is Item.AllTagModelItem -> {
+                            mAdapter?.tagMode = TagMode.ALL
+                        }
+                        is Item.HideTagItem -> {
+                            mAdapter?.tagMode = TagMode.TAG_NONE
+                        }
+                        is Item.HideDateItem -> {
+                            mAdapter?.tagMode = TagMode.DATE_NONE
+                        }
+                        is Item.NoneFilterItem -> {
+                            mFilter = FilterMode.ALL
+                            notifyMessageChangedWithFilterMode(mFilter, mFilterText)
+
+                        }
+                        is Item.OnlyOkHttpFilterItem -> {
+                            mFilter = FilterMode.OK_HTTP
+                            notifyMessageChangedWithFilterMode(mFilter, mFilterText)
+                        }
+                        is Item.OnlyErrorFilterItem -> {
+                            mFilter = FilterMode.ERROR
+                            notifyMessageChangedWithFilterMode(mFilter, mFilterText)
+                        }
+                    }
+                    changeSetting(false)
+
+                }
+                recycler_setting_second.adapter = it
+            }
+            // 日志显示级别
+            rb_v.setOnCheckedChangeListener { _, isChecked ->
+                if (isChecked) {
+                    mLogLevel = LogLevelEnum.VERBOSE
+                    notifyMessageChanged()
+                }
+            }
+            rb_d.setOnCheckedChangeListener { _, isChecked ->
+                if (isChecked) {
+                    mLogLevel = LogLevelEnum.DEBUG
+                    notifyMessageChanged()
+                }
+            }
+            rb_i.setOnCheckedChangeListener { _, isChecked ->
+                if (isChecked) {
+                    mLogLevel = LogLevelEnum.INFO
+                    notifyMessageChanged()
+                }
+            }
+            rb_w.setOnCheckedChangeListener { _, isChecked ->
+                if (isChecked) {
+                    mLogLevel = LogLevelEnum.WARN
+                    notifyMessageChanged()
+                }
+            }
+            rb_e.setOnCheckedChangeListener { _, isChecked ->
+                if (isChecked) {
+                    mLogLevel = LogLevelEnum.ERROR
+                    notifyMessageChanged()
+                }
+
+            }
+            rb_a.setOnCheckedChangeListener { _, isChecked ->
+                if (isChecked) {
+                    mLogLevel = LogLevelEnum.ASSERT
+                    notifyMessageChanged()
+                }
+                closeFilterTextInput()
+            }
+            // 缩小
             iv_reduce.setOnClickListener {
                 if (mSpread) {
                     onSizeChanged(false)
                 }
+                closeFilterTextInput()
             }
-
-            /* iv_walle.setOnClickListener {
-                 if (!mSpread) {
-                     onSizeChanged(true)
-                 }
-             }
-             iv_walle.setOnLongClickListener {
-                 false
-             }*/
-
+            // 复制日志信息
             iv_share.setOnClickListener {
+                changeSetting(false)
                 copy()
+                closeFilterTextInput()
             }
+            // 自动刷新到底部
+            iv_auto.setOnClickListener {
+                changeSetting(false)
+                closeFilterTextInput()
+                mAuto = !mAuto
+                iv_auto.alpha = if (mAuto) 1f else 0.55f
+            }
+            // 打开过滤编辑
+            iv_edit.setOnClickListener {
+                //mContext.toast("你有${UPDATE_FLAG_DELAY}ms时间设置过滤~")
+                changeSetting(false)
+                view_edit.visibility = View.VISIBLE
+                et_tag.setText(mFilterText)
+                //rg_log_level.visibility = View.VISIBLE
+                updateFlag(true) {
+                    view_edit.visibility = View.GONE
+                    rg_log_level.visibility = View.GONE
+                }
+            }
+            // 过滤文本编辑
+            et_tag.setOnFocusChangeListener { _, hasFocus ->
+                /* if (hasFocus) {
+                     updateFlag(true)
+                 } else {
+                     updateFlag(false)
+                 }*/
+            }
+            et_tag.addTextChangedListener(object : TextWatcherAdapter() {
+                override fun afterTextChanged(s: Editable?) {
+
+                }
+            })
+            // 设置过滤文字
+            tv_tag_send.setOnClickListener {
+                val text = et_tag.text.toString()
+                mFilterText = text.trim()
+                notifyMessageChangedWithFilterMode(FilterMode.ALL, mFilterText)
+                closeFilterTextInput()
+            }
+            // 选择过滤级别
+            tv_tag_level.setOnClickListener {
+                rg_log_level.visibility = View.VISIBLE
+
+            }
+
+            // 打开设置
             iv_setting.setOnClickListener {
-                mAdapter?.level = MessageShowLevel.values()[Random.nextInt(3)]
+                val vi = view_setting.visibleExt
+                changeSetting(!vi)
+                closeFilterTextInput()
             }
+//            tv_show_mode.setOnClickListener {
+//                mAdapter?.level = MessageShowLevel.values()[Random.nextInt(3)]
+//                view_setting.visibility = View.GONE
+//            }
 
         }
+    }
+
+    private fun closeFilterTextInput() {
+        mView?.run {
+            updateFlag(false) {
+                view_edit.visibility = View.GONE
+                rg_log_level.visibility = View.GONE
+            }
+        }
+    }
+
+    private fun notifyMessageChangedWithFilterMode(mode: FilterMode, filterText: String) {
+
+        if (filterText.isNotEmpty()) {
+            mAdapter?.messageFilter = { it.tag == filterText || it.msg.contains(filterText) }
+        } else {
+            mAdapter?.messageFilter = when (mode) {
+                FilterMode.ALL -> {
+                    { true }
+                }
+                FilterMode.OK_HTTP -> {
+                    {
+                        it is Message.OkHttpMessage
+                    }
+                }
+                FilterMode.ERROR -> {
+                    {
+                        it is Message.ErrorMessage || it.level >= LogLevelEnum.ERROR
+                    }
+                }
+            }
+        }
+        mAdapter?.setNewData(mMessageList)
+    }
+
+    private fun View.notifyMessageChanged() {
+        tv_tag_level.text = mLogLevel.text
+        rg_log_level.visibility = View.GONE
+        mAdapter?.level = mLogLevel
+        mAdapter?.setNewData(mMessageList)
+    }
+
+    private fun changeSetting(open: Boolean) {
+        mView?.run {
+            if (open) {
+                view_setting.visibility = View.VISIBLE
+                mSettingAdapter?.setNewData(settingData())
+            } else {
+                view_setting.visibility = View.GONE
+                mSettingAdapter?.setNewData(mutableListOf())
+                mSettingSecondAdapter?.setNewData(mutableListOf())
+            }
+        }
+
     }
 
     private var mDrag = false
@@ -88,7 +307,7 @@ class HDOverlay(application: Application, resId: Int = -1) :
                 MotionEvent.ACTION_DOWN -> {
                     downX = event.rawX
                     downY = event.rawY
-                    Log.i(TAG, "down (x,y) = ($downX,$downY)")
+                    HDLog.i(TAG, "down (x,y) = ($downX,$downY)")
                     val positionInView = view.iv_walle.containsPoint(event.rawX, event.rawY)
                     if (positionInView) {
                         if (!mSpread) {//当是缩小时
@@ -120,7 +339,7 @@ class HDOverlay(application: Application, resId: Int = -1) :
                     }
                 }
                 MotionEvent.ACTION_UP -> {
-                    Log.i(TAG, "up")
+                    HDLog.i(TAG, "up")
                     if (mDrag) {
                         mDrag = false
                         val offsetX = event.rawX - downX
@@ -152,7 +371,10 @@ class HDOverlay(application: Application, resId: Int = -1) :
                             val viewHeight = view.measuredHeight
                             val topLimit = mContext.screenHeight / 10
                             val bottomLimit = mContext.screenHeight * 9 / 10
-                            Log.i(TAG, "lastY = $lastY bottomLimit=$bottomLimit topLimit=$topLimit")
+                            HDLog.i(
+                                TAG,
+                                "lastY = $lastY bottomLimit=$bottomLimit topLimit=$topLimit"
+                            )
                             val finalY: Float = when {
 
                                 lastY < topLimit -> {
@@ -187,8 +409,8 @@ class HDOverlay(application: Application, resId: Int = -1) :
 
     override fun copy() {
         clipboardManager.primaryClip = ClipData.newPlainText(
-            com.bugu.walle.TAG,
-            "${mContext.appInfo} \n \n${mMessageList.joinToString(separator = "") {
+            TAG,
+            "${mContext.appInfoForCopy} \n\n\n${mMessageList.joinToString(separator = "") {
                 it.simpleMsg + "\n"
             }}"
         )
@@ -236,11 +458,12 @@ class HDOverlay(application: Application, resId: Int = -1) :
         }
 
         getLocalVisibleRect(mViewRect)//在父控件的大小
-        Log.i(
+        HDLog.i(
             TAG,
             "mViewRect ${mViewRect.right - mViewRect.left} ${mViewRect.bottom - mViewRect.top}"
         )
     }
+
 
     override fun append(msg: Message) {
         mHandler.post {
@@ -248,13 +471,18 @@ class HDOverlay(application: Application, resId: Int = -1) :
                 mMessageList.add(defaultAppMessage())
             }
             mMessageList.add(msg)
-            mAdapter?.setNewData(mMessageList)
+            mAdapter?.addData(msg)
+            if (mAuto) {
+                mAdapter?.run {
+                    mView?.recycler?.scrollToPosition(this.itemCount - 1)
+                }
+            }
         }
     }
 
-    private fun defaultAppMessage() = Message.AppInfoMessage(
+    private fun defaultAppMessage() = Message.NormalMessage(
         System.currentTimeMillis(),
-        TAG, "欢迎使用Walle工具！"
+        TAG, "欢迎使用Walle工具！", LogLevelEnum.INFO
     )
 
     override fun clear() {

@@ -6,20 +6,22 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.bugu.walle.R
 import com.bugu.walle.extension.formatDate
+import com.bugu.walle.log.LogLevelEnum
 import com.bugu.walle.log.Message
 import kotlinx.android.synthetic.main.item_message.view.*
 import kotlinx.android.synthetic.main.item_message.view.tv_msg
 
-class MessageAdapter(private val dataList: MutableList<Message>) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+class MessageAdapter(private val dataList: MutableList<Message>) :
+    RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
-    var level: MessageShowLevel = MessageShowLevel.DATE_NONE
-        set(value) {
-            field = value
-            notifyDataSetChanged()
-        }
+    var tagMode: TagMode = TagMode.DATE_NONE
+    var level: LogLevelEnum = LogLevelEnum.VERBOSE
+    var messageFilter: MessageFilter = { true }
+
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
-        val inflate = LayoutInflater.from(parent.context).inflate(R.layout.item_message, parent, false)
+        val inflate =
+            LayoutInflater.from(parent.context).inflate(R.layout.item_message, parent, false)
         return MessageViewHolder(inflate)
     }
 
@@ -29,25 +31,33 @@ class MessageAdapter(private val dataList: MutableList<Message>) : RecyclerView.
 
     fun setNewData(list: List<Message>) {
         dataList.clear()
-        dataList.addAll(list)
+        dataList.addAll(list.filter(messageFilter).filter {
+            it.level >= this.level
+        })
         notifyDataSetChanged()
     }
 
+    fun addData(message :Message) {
+        if(messageFilter.invoke(message) && message.level>=this.level){
+            dataList.add(message)
+        }
+        notifyDataSetChanged()
+    }
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         if (holder is MessageViewHolder) {
             holder.itemView.run {
 
-                when (level) {
-                    MessageShowLevel.ALL -> {
+                when (tagMode) {
+                    TagMode.ALL -> {
                         tv_title.visibility = View.VISIBLE
                         tv_tag.visibility = View.VISIBLE
                     }
-                    MessageShowLevel.DATE_NONE -> {
+                    TagMode.DATE_NONE -> {
                         tv_title.visibility = View.GONE
                         tv_tag.visibility = View.VISIBLE
                     }
-                    MessageShowLevel.TAG_NONE -> {
+                    TagMode.TAG_NONE -> {
                         tv_title.visibility = View.VISIBLE
                         tv_tag.visibility = View.GONE
                     }
@@ -56,6 +66,7 @@ class MessageAdapter(private val dataList: MutableList<Message>) : RecyclerView.
                 tv_title.text = "[${formatDate(message.time)}]"
                 tv_tag.text = "[${message.tag}]"
                 tv_msg.text = message.msg
+                tv_msg.setTextColor(context.resources.getColor(message.level.color))
 
             }
         }

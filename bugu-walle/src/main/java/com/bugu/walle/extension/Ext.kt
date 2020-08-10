@@ -1,25 +1,20 @@
 package com.bugu.walle.extension
 
 import android.annotation.SuppressLint
-import android.app.Activity
-import android.content.ClipboardManager
 import android.content.Context
-import android.content.Context.CLIPBOARD_SERVICE
-import android.content.Context.WINDOW_SERVICE
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.provider.Settings
-import android.util.Log
+import android.text.Editable
+import android.text.TextWatcher
 import android.view.View
-import android.view.WindowManager
+import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelStoreOwner
-import com.bugu.walle.TAG
 import java.text.SimpleDateFormat
-import java.util.*
 
 val Context.screenWidth: Int
     get() = resources.displayMetrics.widthPixels
@@ -67,11 +62,39 @@ fun formatDate(time: Long, detail: Boolean = false): String = detail.run {
 }.format(time)
 
 val Context.appInfo: String
-    get() = "${Build.MANUFACTURER}/${Build.MODEL}/${Build.DEVICE}/${Build.DISPLAY}/${versionExt}/${Build.VERSION.SDK_INT}/${screenWidth}*${screenHeight}/${statusBarHeight}"
+    get() = "${versionExt}/${screenWidth}*${screenHeight}/${statusBarHeight}\n" +
+            "${Build.MANUFACTURER}/${Build.MODEL}/${Build.DEVICE}/${Build.DISPLAY}/${Build.VERSION.SDK_INT}\n"
+
+val Context.appInfoForCopy: String
+    get() = "【Version】${versionExt}\n" +
+            "【Screen】${screenWidth}*${screenHeight} - ${statusBarHeight}\n" +
+            "【MANUFACTURER】${Build.MANUFACTURER}\n" +
+            "【MODEL】${Build.MODEL}\n" +
+            "【DEVICE】${Build.DEVICE}\n" +
+            "【DISPLAY】${Build.DISPLAY}\n" +
+            "【SDK_INT】${Build.VERSION.SDK_INT}\n"
+
 
 val Context.versionExt: String
     get() = packageManager.getPackageInfo(packageName, 0).run {
-        "$versionName/$versionCode "
+        "$packageName $versionName/$versionCode "
     }
+
+val View.visibleExt: Boolean
+    get() = visibility == View.VISIBLE
+
+fun Context.toast(msg: String) = Toast.makeText(this, msg, Toast.LENGTH_LONG).show()
+
+abstract class TextWatcherAdapter : TextWatcher {
+    override fun afterTextChanged(s: Editable?) {
+    }
+
+    override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
+    }
+
+    override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+    }
+
+}
 
 

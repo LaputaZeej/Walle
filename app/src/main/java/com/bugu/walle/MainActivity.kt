@@ -21,12 +21,25 @@ class MainActivity : AppCompatActivity() {
             launch {
                 repeat(100) {
                     delay(1000)
-                    Walle.appendNormal("xxxx", "=====> $it ")
+                    Walle.okHttp("=====> $it ")
+                }
+            }
+
+            launch {
+                repeat(100) {
+                    delay(1000)
+                    Walle.i("xxxx", "=====> $it ")
+                }
+            }
+            launch {
+                repeat(100) {
+                    delay(5000)
+                    Walle.e("error", "=====> $it ")
                 }
             }
 
             delay(5000)
-            Walle.clear()
+            //Walle.clear()
 
             delay(30 * 1000)
             //Walle.dismiss()
@@ -34,4 +47,6 @@ class MainActivity : AppCompatActivity() {
         }
 
     }
+
+
 }

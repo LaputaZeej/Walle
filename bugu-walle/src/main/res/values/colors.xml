@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="log_level_verbose">#ffffff</color>
+    <color name="log_level_debug">#ffffff</color>
+    <color name="log_level_info">#00ccff</color>
+    <color name="log_level_warn">#ff9988</color>
+    <color name="log_level_error">#ff0000</color>
+    <color name="log_level_asset">#ff0000</color>
+</resources>

@@ -1,5 +1,5 @@
 package com.bugu.walle.overlay
 
-enum class MessageShowLevel {
+enum class TagMode {
     ALL,DATE_NONE,TAG_NONE;
 }

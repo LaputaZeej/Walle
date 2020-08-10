@@ -3,11 +3,11 @@ package com.bugu.walle.overlay
 import android.app.Application
 import android.content.ClipboardManager
 import android.content.Context
-import android.graphics.Point
 import android.os.Build
 import android.os.Handler
 import android.os.Message
 import android.view.*
+import android.view.WindowManager.LayoutParams.*
 import com.bugu.walle.R
 
 /**
@@ -29,19 +29,10 @@ abstract class AbstractOverlay<T>(private val application: Application, var resI
 
     protected val mHandler = Handler() {
         when (it.what) {
-            1 -> {
-                val point = it.obj as Point
-                mView?.run {
-                    if (isAttachedToWindow) {
-                        val newLayoutParam = this.layoutParams.run {
-                            this as WindowManager.LayoutParams
-                        }.also { param ->
-                            param.x += point.x
-                            param.y += point.y
-                        }
-                        mWindowManager.updateViewLayout(this, newLayoutParam)
-                    }
-                }
+            MSG_UPDATE_FLAG -> {
+                @Suppress("UNCHECKED_CAST") val block: Block? = it.obj as Block?
+                block?.invoke()
+                updateFlag(false)
             }
         }
         false
@@ -58,9 +49,10 @@ abstract class AbstractOverlay<T>(private val application: Application, var resI
 
     override fun show() {
         checkResourceId()
-        if (mView?.isActivated == true) {
+        if (mCreated) {
             return
         }
+        mCreated = true
         mView = LayoutInflater.from(mContext).inflate(resId, null, false).also { view ->
             initView(view)
             mWindowManager.addView(
@@ -74,6 +66,7 @@ abstract class AbstractOverlay<T>(private val application: Application, var resI
                     // - TYPE_SYSTEM_OVERLAY
                     // - TYPE_SYSTEM_ERROR
                     // 如果需要实现在其他应用和窗口上方显示提醒窗口，那么必须该为TYPE_APPLICATION_OVERLAY的新类型
+                    flags = FLAG_NOT_TOUCH_MODAL
                     type =
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
                         else WindowManager.LayoutParams.TYPE_PHONE
@@ -81,6 +74,36 @@ abstract class AbstractOverlay<T>(private val application: Application, var resI
             )
             initTouchEvent(view)
         }
+    }
+
+    /**
+     * 解决悬浮窗口键盘不能编辑的问题
+     * 改变flag
+     */
+    protected fun updateFlag(enable: Boolean, block: Block? = null) {
+        mView?.run {
+            val layout = this.layoutParams.run {
+                this@run as WindowManager.LayoutParams
+            }.also {
+                mHandler.removeMessages(MSG_UPDATE_FLAG)
+                if (enable) {
+                    mHandler.sendMessageDelayed(Message.obtain().apply {
+                        what = MSG_UPDATE_FLAG
+                        obj = block
+                    }, UPDATE_FLAG_DELAY)
+                    it.flags = FLAG_NOT_TOUCH_MODAL
+                } else {
+                    block?.invoke()
+                    it.flags = FLAG_NOT_FOCUSABLE
+                }
+            }
+            mWindowManager.updateViewLayout(this, layout)
+        }
+
+    }
+
+    private fun checkViewAdded(): Boolean {
+        return (mView?.isActivated == true || mView?.isAttachedToWindow == true || mView?.windowToken != null)
     }
 
     abstract fun initTouchEvent(view: View)
@@ -131,7 +154,9 @@ abstract class AbstractOverlay<T>(private val application: Application, var resI
     }
 
     companion object {
-        internal const val TAG = "HDOverlay"
+        internal const val TAG = "Walle"
+        const val MSG_UPDATE_FLAG = 0X02
+        const val UPDATE_FLAG_DELAY = 12 * 1000L
     }
 
 }
