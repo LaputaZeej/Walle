@@ -23,9 +23,7 @@ class WalleUncaughtExceptionHandler : Thread.UncaughtExceptionHandler {
         } catch (e: Exception) {
             return ""
         } finally {
-            if (pw != null) {
-                pw.close()
-            }
+            pw?.close()
         }
         return writer.toString()
     }

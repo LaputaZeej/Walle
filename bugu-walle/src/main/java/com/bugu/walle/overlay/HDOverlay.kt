@@ -66,7 +66,7 @@ class HDOverlay(application: Application, resId: Int = -1) :
                     Item.OnlyOkHttpFilterItem, Item.OnlyErrorFilterItem
                 )
             ),
-            SettingItem<Item>(Item.MoreItem.text, Item.MoreItem, listOf())
+            SettingItem<Item>("v${BuildConfig.VERSION_NAME}", Item.MoreItem, listOf())
         )
     }
 
