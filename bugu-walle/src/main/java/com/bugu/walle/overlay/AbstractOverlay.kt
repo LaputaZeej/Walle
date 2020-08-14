@@ -1,14 +1,17 @@
 package com.bugu.walle.overlay
 
+import android.app.Activity
 import android.app.Application
 import android.content.ClipboardManager
 import android.content.Context
 import android.os.Build
+import android.os.Bundle
 import android.os.Handler
 import android.os.Message
 import android.view.*
 import android.view.WindowManager.LayoutParams.*
 import com.bugu.walle.R
+import java.lang.ref.WeakReference
 
 /**
  * 悬浮窗口
@@ -26,6 +29,38 @@ abstract class AbstractOverlay<T>(private val application: Application, var resI
     protected var mCreated = false
     protected var mShowing = false
     protected var mCanceled = false
+    private val mActivityLifecycleCallbacks: Application.ActivityLifecycleCallbacks
+    protected var mCurrentActivity :WeakReference<Activity?> = WeakReference(null)
+
+    init {
+        mActivityLifecycleCallbacks = object : Application.ActivityLifecycleCallbacks {
+            override fun onActivityPaused(activity: Activity) {
+            }
+
+            override fun onActivityResumed(activity: Activity) {
+            }
+
+            override fun onActivityStarted(activity: Activity) {
+                mCurrentActivity = WeakReference(activity)
+            }
+
+            override fun onActivityDestroyed(activity: Activity) {
+                mCurrentActivity = WeakReference(null)
+            }
+
+            override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle?) {
+            }
+
+            override fun onActivityStopped(activity: Activity) {
+            }
+
+            override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {
+            }
+
+        }.also {
+            application.registerActivityLifecycleCallbacks(it)
+        }
+    }
 
     protected val mHandler = Handler() {
         when (it.what) {
@@ -115,6 +150,7 @@ abstract class AbstractOverlay<T>(private val application: Application, var resI
     abstract fun defaultLayoutParam(): WindowManager.LayoutParams
 
     override fun dismiss() {
+        mCreated =false
         mHandler.removeCallbacksAndMessages(null)
         mView?.run {
             if (this.isAttachedToWindow) {

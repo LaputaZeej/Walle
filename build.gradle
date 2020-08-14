@@ -49,8 +49,16 @@ buildscript {
 
 allprojects {
     repositories {
+        maven {
+            credentials {
+                username "deployment"
+                password "hdwldev123456"
+            }
+            url "http://maven.yunext.com:10000/nexus/content/groups/public"
+        }
         google()
         jcenter()
+
     }
 }
 

@@ -14,7 +14,7 @@ object Walle : LifecycleObserver {
 
     private var hdOverlay: HDOverlay? = null
 
-    private var opened = false
+    private var opened = true
 
     fun init(application: Application, configuration: Configuration? = null) {
         hdOverlay = HDOverlay(application)
@@ -22,29 +22,22 @@ object Walle : LifecycleObserver {
         ProcessLifecycleOwner.get().lifecycle.addObserver(this)
     }
 
-    fun start() {
-        opened = true
-    }
-
-    fun stop() {
-        opened = false
-        clear()
-    }
-
 
     @OnLifecycleEvent(Lifecycle.Event.ON_START)
     fun onStart() {
         //hdOverlay.onSizeChange(true)
+        show()
     }
 
     @OnLifecycleEvent(Lifecycle.Event.ON_STOP)
     fun onStop() {
-        hdOverlay?.onSizeChange(false)
+        //hdOverlay?.onSizeChange(false)
+        dismiss()
     }
 
     @OnLifecycleEvent(Lifecycle.Event.ON_DESTROY)
     fun onDestroy() {
-        dismiss()
+        clear()
     }
 
 
@@ -62,6 +55,17 @@ object Walle : LifecycleObserver {
         activity.supportFragmentManager.beginTransaction()
             .add(RequestOverlayFragment.newInstance(), "checkOverlay")
             .commitAllowingStateLoss()
+    }
+
+    @JvmStatic
+    fun start() {
+        opened = true
+    }
+
+    @JvmStatic
+    fun stop() {
+        opened = false
+        clear()
     }
 
     @JvmStatic
@@ -132,14 +136,12 @@ object Walle : LifecycleObserver {
 
     @JvmStatic
     private fun show() {
-        start()
         hdOverlay?.show()
     }
 
     @JvmStatic
     fun dismiss() {
         hdOverlay?.dismiss()
-        stop()
     }
 
     private fun append(msg: Message) {
@@ -147,7 +149,7 @@ object Walle : LifecycleObserver {
     }
 
     @JvmStatic
-    fun clear() {
+    private fun clear() {
         hdOverlay?.clear()
     }
 

@@ -143,7 +143,7 @@
                 <androidx.recyclerview.widget.RecyclerView
                     android:id="@+id/recycler_setting"
                     android:layout_width="90dp"
-                    android:layout_height="wrap_content" />
+                    android:layout_height="@dimen/overlay_height" />
             </LinearLayout>
             <!-- 设置 二级-->
             <LinearLayout
@@ -282,13 +282,15 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="1dp"
-        android:background="@android:color/black"
+        android:background="@android:color/transparent"
         android:elevation="10dp">
 
         <ImageView
             android:id="@+id/iv_walle"
             android:layout_width="44dp"
             android:layout_height="44dp"
+            android:background="@drawable/bg_walle_02"
+            android:padding="4dp"
             android:src="@drawable/icon_walle"
             app:layout_constraintBottom_toTopOf="@+id/tv_walle"
             app:layout_constraintLeft_toLeftOf="parent"

@@ -50,30 +50,6 @@ class HDOverlay(application: Application, resId: Int = -1) :
         defaultY = mContext.screenHeight * 1 / 5
     }
 
-    private fun settingData(): List<SettingItem<Item>> {
-
-        return listOf(
-            SettingItem<Item>(
-                Item.TagModeItem.text, Item.TagModeItem, createSettingItemList(
-                    Item.AllTagModelItem,
-                    Item.HideDateItem, Item.HideTagItem
-                )
-            ),
-            SettingItem<Item>(
-                Item.FilterItem.text,
-                Item.FilterItem, createSettingItemList(
-                    Item.NoneFilterItem,
-                    Item.OnlyOkHttpFilterItem, Item.OnlyErrorFilterItem
-                )
-            ),
-            SettingItem<Item>("v${BuildConfig.VERSION_NAME}", Item.MoreItem, listOf())
-        )
-    }
-
-    private fun createSettingItemList(vararg items: Item): List<SettingItem<Item>> = items.map {
-        SettingItem(it.text, it, listOf())
-    }
-
 
     override fun initView(view: View) {
         with(view) {
@@ -81,7 +57,7 @@ class HDOverlay(application: Application, resId: Int = -1) :
             tv_app_version.text = "v${BuildConfig.VERSION_NAME}"
             // 日志
             recycler.layoutManager = LinearLayoutManager(mContext)
-            mAdapter = MessageAdapter(mutableListOf()).also {
+            mAdapter = MessageAdapter(mMessageList).also {
                 recycler.adapter = it
             }
             // 设置菜单
@@ -281,7 +257,7 @@ class HDOverlay(application: Application, resId: Int = -1) :
         mView?.run {
             if (open) {
                 view_setting.visibility = View.VISIBLE
-                mSettingAdapter?.setNewData(settingData())
+                mSettingAdapter?.setNewData(SETTING_ITEMS)
             } else {
                 view_setting.visibility = View.GONE
                 mSettingAdapter?.setNewData(mutableListOf())
@@ -468,7 +444,9 @@ class HDOverlay(application: Application, resId: Int = -1) :
     override fun append(msg: Message) {
         mHandler.post {
             if (mMessageList.isEmpty()) {
-                mMessageList.add(defaultAppMessage())
+                val defaultAppMessage = defaultAppMessage()
+                mMessageList.add(defaultAppMessage)
+                mAdapter?.addData(defaultAppMessage)
             }
             mMessageList.add(msg)
             mAdapter?.addData(msg)
@@ -482,10 +460,11 @@ class HDOverlay(application: Application, resId: Int = -1) :
 
     private fun defaultAppMessage() = Message.NormalMessage(
         System.currentTimeMillis(),
-        TAG, "欢迎使用Walle工具！", LogLevelEnum.INFO
+        TAG, "欢迎使用Walle工具！\n${mContext.appInfoForCopy}", LogLevelEnum.INFO
     )
 
     override fun clear() {
+        mCreated =false
         mHandler.removeCallbacksAndMessages(null)
         mMessageList.clear()
         mMessageList.add(defaultAppMessage())
