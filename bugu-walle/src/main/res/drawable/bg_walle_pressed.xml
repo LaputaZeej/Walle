@@ -10,24 +10,16 @@
     <item>
         <shape android:shape="oval">
             <gradient
-                android:centerColor="#cccccc"
+                android:centerColor="#ffffff"
                 android:endColor="#ffffff"
                 android:gradientRadius="44dp"
-                android:startColor="#ff9988"
+                android:startColor="#ff0000"
                 android:type="radial" />
             <size
                 android:width="36dp"
                 android:height="36dp" />
         </shape>
     </item>
-    <shape android:shape="oval">
-        <solid android:color="#55ffffff" />
-        <size
-            android:width="36dp"
-            android:height="36dp" />
-
-    </shape>
-
     <!--    <item>
             <shape android:shape="oval">
                 <solid android:color="99ffffff"/>

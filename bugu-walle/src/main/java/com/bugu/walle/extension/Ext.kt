@@ -1,8 +1,11 @@
 package com.bugu.walle.extension
 
 import android.annotation.SuppressLint
+import android.app.Activity
+import android.app.Application
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.provider.Settings
@@ -96,5 +99,33 @@ abstract class TextWatcherAdapter : TextWatcher {
     }
 
 }
+
+typealias IntentInit = (Intent) -> Unit
+
+inline fun <reified T : Activity> Context.toActivity(noinline block: IntentInit? = null) =
+    when (this) {
+        is Activity -> {
+            startActivity(Intent(this, T::class.java).apply {
+                block?.invoke(this)
+            })
+        }
+        is Fragment -> {
+            requireActivity().startActivity(Intent(this, T::class.java).apply {
+                block?.invoke(this)
+            })
+        }
+        is Application -> {
+            getPackageManager().getLaunchIntentForPackage(packageName)?.let {
+                startActivity(it.apply {
+                    block?.invoke(this)
+                })
+            }
+        }
+        else -> {
+            throw IllegalStateException("错误的context")
+        }
+    }
+
+
 
 

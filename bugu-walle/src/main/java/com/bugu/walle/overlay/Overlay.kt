@@ -14,5 +14,5 @@ interface Overlay<T> {
 
     fun move(x:Int,y:Int)
 
-    fun onSizeChange(spread:Boolean)
+    fun changedSpread(spread:Boolean)
 }

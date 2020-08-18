@@ -31,7 +31,7 @@ class HDOverlay(application: Application, resId: Int = -1) :
     private val mMessageList: MutableList<Message> = mutableListOf()
 
     // 展开
-    private var mSpread: Boolean = true
+    private var mSpread: Boolean = false
 
     // 自动刷新
     private var mAuto: Boolean = true
@@ -44,6 +44,7 @@ class HDOverlay(application: Application, resId: Int = -1) :
     private var mFilterText: String = ""
 
     init {
+
         overlayWidth = mContext.resources.getDimension(R.dimen.overlay_width)
         overlayHeight = mContext.resources.getDimension(R.dimen.overlay_height)
         defaultX = mContext.screenWidth - overlayWidth.toInt()
@@ -57,16 +58,38 @@ class HDOverlay(application: Application, resId: Int = -1) :
             tv_app_version.text = "v${BuildConfig.VERSION_NAME}"
             // 日志
             recycler.layoutManager = LinearLayoutManager(mContext)
-            mAdapter = MessageAdapter(mMessageList).also {
+            mAdapter = MessageAdapter(mutableListOf()).also {
                 recycler.adapter = it
             }
+            mAdapter?.setNewData(mMessageList)
             // 设置菜单
             recycler_setting.layoutManager = LinearLayoutManager(mContext)
             mSettingAdapter = SettingAdapter<Item>(mutableListOf()).also {
                 recycler_setting.adapter = it
                 it.mOnItemClickListener = { _, data ->
-                    val items = data.items
-                    mSettingSecondAdapter?.setNewData(items)
+                    when (data.data) {
+                        is AppInfoItem -> {
+                            //toAppInfo()
+                            mContext.launchAppDetailsSettings()
+                            changedSpread(false)
+                        }
+
+                        is DevItem -> {
+                            //toAppInfo()
+                            startDevelopmentActivity(mContext)
+                            changedSpread(false)
+                        }
+
+                        is LanguageItem -> {
+                            //toAppInfo()
+                            startLocalActivity(mContext)
+                            changedSpread(false)
+                        }
+                        else -> {
+                            val items = data.items
+                            mSettingSecondAdapter?.setNewData(items)
+                        }
+                    }
                 }
             }
             // 设置二级菜单
@@ -74,28 +97,30 @@ class HDOverlay(application: Application, resId: Int = -1) :
             mSettingSecondAdapter = SettingAdapter<Item>(mutableListOf()).also {
                 it.mOnItemClickListener = { _, data ->
                     when (data.data) {
-                        is Item.AllTagModelItem -> {
+                        is AllTagModelItem -> {
                             mAdapter?.tagMode = TagMode.ALL
                         }
-                        is Item.HideTagItem -> {
+                        is HideTagItem -> {
                             mAdapter?.tagMode = TagMode.TAG_NONE
                         }
-                        is Item.HideDateItem -> {
+                        is HideDateItem -> {
                             mAdapter?.tagMode = TagMode.DATE_NONE
                         }
-                        is Item.NoneFilterItem -> {
+                        is NoneFilterItem -> {
                             mFilter = FilterMode.ALL
                             notifyMessageChangedWithFilterMode(mFilter, mFilterText)
 
                         }
-                        is Item.OnlyOkHttpFilterItem -> {
+                        is OnlyOkHttpFilterItem -> {
                             mFilter = FilterMode.OK_HTTP
                             notifyMessageChangedWithFilterMode(mFilter, mFilterText)
                         }
-                        is Item.OnlyErrorFilterItem -> {
+                        is OnlyErrorFilterItem -> {
                             mFilter = FilterMode.ERROR
                             notifyMessageChangedWithFilterMode(mFilter, mFilterText)
                         }
+
+
                     }
                     changeSetting(false)
 
@@ -209,7 +234,22 @@ class HDOverlay(application: Application, resId: Int = -1) :
 //                mAdapter?.level = MessageShowLevel.values()[Random.nextInt(3)]
 //                view_setting.visibility = View.GONE
 //            }
+        }
+    }
 
+    override fun show() {
+        super.show()
+        mHandler.post{
+            changedSpread(false)
+        }
+
+
+    }
+
+    override fun dismiss() {
+        super.dismiss()
+        mHandler.post{
+            changedSpread(false)
         }
     }
 
@@ -297,6 +337,7 @@ class HDOverlay(application: Application, resId: Int = -1) :
                             }
                         }
                         mDrag = true
+                        mView?.iv_walle?.setBackgroundResource(R.drawable.bg_walle_pressed)
                     }
                 }
                 MotionEvent.ACTION_MOVE -> {
@@ -366,6 +407,7 @@ class HDOverlay(application: Application, resId: Int = -1) :
                             it.x = finalX.toInt()
                             it.y = finalY.toInt()
                         }
+                        mView?.iv_walle?.setBackgroundResource(R.drawable.bg_walle_normal)
                         mWindowManager.updateViewLayout(view, newLayoutParam)
                         return@setOnTouchListener true
                     }
@@ -384,20 +426,19 @@ class HDOverlay(application: Application, resId: Int = -1) :
 
 
     override fun copy() {
-        clipboardManager.primaryClip = ClipData.newPlainText(
-            TAG,
-            "${mContext.appInfoForCopy} \n\n\n${mMessageList.joinToString(separator = "") {
-                it.simpleMsg + "\n"
-            }}"
-        )
-        Toast.makeText(mContext, "已经复制到粘贴板", Toast.LENGTH_SHORT).show()
+        val msg = " \n\n\n${mMessageList.joinToString(separator = "") {
+            it.simpleMsg + "\n"
+        }}"
+//        clipboardManager.primaryClip = ClipData.newPlainText(TAG, msg)
+//        Toast.makeText(mContext, "已经复制到粘贴板", Toast.LENGTH_SHORT).show()
+        mContext.shareText(msg)
     }
 
     override fun defaultLayoutParam(): WindowManager.LayoutParams =
         WindowManager.LayoutParams().apply {
             width = WindowManager.LayoutParams.WRAP_CONTENT
             height = WindowManager.LayoutParams.WRAP_CONTENT
-            x = defaultX
+            x = mContext.screenWidth - (mView?.width ?: 0)
             y = defaultY
             format = PixelFormat.RGBA_8888
             gravity = Gravity.LEFT or Gravity.TOP
@@ -464,10 +505,9 @@ class HDOverlay(application: Application, resId: Int = -1) :
     )
 
     override fun clear() {
-        mCreated =false
+        mCreated = false
         mHandler.removeCallbacksAndMessages(null)
         mMessageList.clear()
-        mMessageList.add(defaultAppMessage())
         mAdapter?.setNewData(mMessageList)
     }
 
@@ -475,7 +515,7 @@ class HDOverlay(application: Application, resId: Int = -1) :
 
     }
 
-    override fun onSizeChange(spread: Boolean) {
+    override fun changedSpread(spread: Boolean) {
         mView?.onSizeChanged(spread)
     }
 

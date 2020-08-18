@@ -8,9 +8,17 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Message
-import android.view.*
-import android.view.WindowManager.LayoutParams.*
+import android.view.LayoutInflater
+import android.view.View
+import android.view.WindowManager
+import android.view.WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
+import android.view.WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL
+import androidx.fragment.app.Fragment
+import androidx.fragment.app.FragmentActivity
+import androidx.fragment.app.FragmentManager
 import com.bugu.walle.R
+import com.bugu.walle.extension.toActivity
+import com.bugu.walle.ui.SettingActivity
 import java.lang.ref.WeakReference
 
 /**
@@ -30,22 +38,26 @@ abstract class AbstractOverlay<T>(private val application: Application, var resI
     protected var mShowing = false
     protected var mCanceled = false
     private val mActivityLifecycleCallbacks: Application.ActivityLifecycleCallbacks
-    protected var mCurrentActivity :WeakReference<Activity?> = WeakReference(null)
+    protected var mCurrentActivity: WeakReference<Activity?> = WeakReference(null)
 
     init {
         mActivityLifecycleCallbacks = object : Application.ActivityLifecycleCallbacks {
             override fun onActivityPaused(activity: Activity) {
+                mCurrentActivity = WeakReference(null)
             }
+
 
             override fun onActivityResumed(activity: Activity) {
-            }
-
-            override fun onActivityStarted(activity: Activity) {
                 mCurrentActivity = WeakReference(activity)
             }
 
+            override fun onActivityStarted(activity: Activity) {
+
+
+            }
+
             override fun onActivityDestroyed(activity: Activity) {
-                mCurrentActivity = WeakReference(null)
+
             }
 
             override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle?) {
@@ -77,6 +89,40 @@ abstract class AbstractOverlay<T>(private val application: Application, var resI
         fun onCancel(hdOverlay: AbstractOverlay<*>)
     }
 
+    protected fun showDialogFragment(fragment: Fragment, tag: String) {
+        try {
+            mCurrentActivity.get()?.run {
+                if (this is FragmentActivity) {
+                    val beginTransaction = this.supportFragmentManager.beginTransaction()
+                    beginTransaction.add(android.R.id.content, fragment, tag).show(fragment)
+                    beginTransaction.commit()
+                }
+            }
+        }catch (e:Throwable){
+            e.printStackTrace()
+        }
+
+
+    }
+
+    protected fun toAppInfo(){
+        mCurrentActivity.get()?.run {
+            toActivity<SettingActivity> ()
+        }
+    }
+
+
+    protected fun dismissFragment(fragment: Fragment) {
+        try {
+            if (this is FragmentActivity) {
+                val beginTransaction = this.supportFragmentManager.beginTransaction()
+                beginTransaction.remove(fragment)
+                    .commitAllowingStateLoss()
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
 
     private fun checkResourceId() {
         if (resId <= 0) resId = R.layout.view_walle
@@ -90,6 +136,7 @@ abstract class AbstractOverlay<T>(private val application: Application, var resI
         mCreated = true
         mView = LayoutInflater.from(mContext).inflate(resId, null, false).also { view ->
             initView(view)
+            initTouchEvent(view)
             mWindowManager.addView(
                 view,
                 mLayoutParams ?: defaultLayoutParam().apply {
@@ -101,13 +148,13 @@ abstract class AbstractOverlay<T>(private val application: Application, var resI
                     // - TYPE_SYSTEM_OVERLAY
                     // - TYPE_SYSTEM_ERROR
                     // 如果需要实现在其他应用和窗口上方显示提醒窗口，那么必须该为TYPE_APPLICATION_OVERLAY的新类型
-                    flags = FLAG_NOT_TOUCH_MODAL
+                    flags = FLAG_NOT_FOCUSABLE
                     type =
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
                         else WindowManager.LayoutParams.TYPE_PHONE
                 }
             )
-            initTouchEvent(view)
+
         }
     }
 
@@ -117,6 +164,10 @@ abstract class AbstractOverlay<T>(private val application: Application, var resI
      */
     protected fun updateFlag(enable: Boolean, block: Block? = null) {
         mView?.run {
+
+            if(!this.isAttachedToWindow){
+                return
+            }
             val layout = this.layoutParams.run {
                 this@run as WindowManager.LayoutParams
             }.also {
@@ -132,7 +183,9 @@ abstract class AbstractOverlay<T>(private val application: Application, var resI
                     it.flags = FLAG_NOT_FOCUSABLE
                 }
             }
-            mWindowManager.updateViewLayout(this, layout)
+            post {
+                mWindowManager.updateViewLayout(this, layout)
+            }
         }
 
     }
@@ -150,7 +203,7 @@ abstract class AbstractOverlay<T>(private val application: Application, var resI
     abstract fun defaultLayoutParam(): WindowManager.LayoutParams
 
     override fun dismiss() {
-        mCreated =false
+        mCreated = false
         mHandler.removeCallbacksAndMessages(null)
         mView?.run {
             if (this.isAttachedToWindow) {

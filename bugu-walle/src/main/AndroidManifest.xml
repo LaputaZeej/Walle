@@ -3,7 +3,10 @@
     package="com.bugu.walle">
 
     <application>
-        <activity android:name=".TestActivity"></activity>
+        <activity
+            android:name=".ui.SettingActivity"
+            android:launchMode="singleTop"
+            android:theme="@style/Theme.AppCompat.DayNight.NoActionBar" />
     </application>
 
 </manifest>

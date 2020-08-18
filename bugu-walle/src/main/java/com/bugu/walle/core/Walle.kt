@@ -26,13 +26,15 @@ object Walle : LifecycleObserver {
     @OnLifecycleEvent(Lifecycle.Event.ON_START)
     fun onStart() {
         //hdOverlay.onSizeChange(true)
-        show()
+        if (opened)
+            show()
     }
 
     @OnLifecycleEvent(Lifecycle.Event.ON_STOP)
     fun onStop() {
         //hdOverlay?.onSizeChange(false)
-        dismiss()
+        if (opened)
+            dismiss()
     }
 
     @OnLifecycleEvent(Lifecycle.Event.ON_DESTROY)
@@ -55,17 +57,6 @@ object Walle : LifecycleObserver {
         activity.supportFragmentManager.beginTransaction()
             .add(RequestOverlayFragment.newInstance(), "checkOverlay")
             .commitAllowingStateLoss()
-    }
-
-    @JvmStatic
-    fun start() {
-        opened = true
-    }
-
-    @JvmStatic
-    fun stop() {
-        opened = false
-        clear()
     }
 
     @JvmStatic
@@ -136,6 +127,7 @@ object Walle : LifecycleObserver {
 
     @JvmStatic
     private fun show() {
+        opened = true
         hdOverlay?.show()
     }
 

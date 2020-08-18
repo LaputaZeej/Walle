@@ -2,6 +2,8 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/content"
+    android:elevation="10dp"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
     android:clickable="true"
@@ -11,6 +13,7 @@
         android:id="@+id/view_top"
         android:layout_width="match_parent"
         android:layout_height="44dp"
+        android:visibility="gone"
         android:background="@android:color/black"
         android:elevation="10dp">
 
@@ -53,11 +56,13 @@
     </androidx.constraintlayout.widget.ConstraintLayout>
 
     <androidx.core.widget.NestedScrollView
+        android:background="@android:color/black"
+        android:visibility="gone"
         android:id="@+id/view_scroll"
         android:layout_width="@dimen/overlay_width"
         android:layout_height="@dimen/overlay_height"
         android:layout_marginTop="1dp"
-        android:background="@android:color/background_dark">
+        >
 
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
@@ -281,15 +286,17 @@
         android:id="@+id/view_bottom"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="1dp"
-        android:background="@android:color/transparent"
-        android:elevation="10dp">
+        android:layout_marginTop="2dp"
+        android:background="#11ffffff"
+        >
 
         <ImageView
+            android:layout_margin="2dp"
+            android:elevation="1dp"
             android:id="@+id/iv_walle"
             android:layout_width="44dp"
             android:layout_height="44dp"
-            android:background="@drawable/bg_walle_02"
+            android:background="@drawable/bg_walle_normal"
             android:padding="4dp"
             android:src="@drawable/icon_walle"
             app:layout_constraintBottom_toTopOf="@+id/tv_walle"

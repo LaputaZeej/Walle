@@ -5,24 +5,24 @@ import com.bugu.walle.BuildConfig
 val SETTING_ITEMS: List<SettingItem<Item>>
     get() = listOf(
         SettingItem<Item>(
-            Item.TagModeItem.text, Item.TagModeItem, createSettingItemList(
-                Item.AllTagModelItem,
-                Item.HideDateItem,
-                Item.HideTagItem
+            TagModeItem.text, TagModeItem, createSettingItemList(
+                AllTagModelItem,
+                HideDateItem,
+                HideTagItem
             )
         ),
         SettingItem<Item>(
-            Item.FilterItem.text,
-            Item.FilterItem, createSettingItemList(
-                Item.NoneFilterItem,
-                Item.OnlyOkHttpFilterItem, Item.OnlyErrorFilterItem
+            FilterItem.text,
+            FilterItem, createSettingItemList(
+                NoneFilterItem,
+                OnlyOkHttpFilterItem, OnlyErrorFilterItem
             )
         ),
-//        SettingItem<Item>(Item.AppInfoItem.text, Item.AppInfoItem, listOf()),
-//        SettingItem<Item>(Item.DevItem.text, Item.DevItem, listOf()),
-//        SettingItem<Item>(Item.LanguageItem.text, Item.LanguageItem, listOf()),
-//        SettingItem<Item>(Item.FileItem.text, Item.FileItem, listOf()),
-        SettingItem<Item>("v${BuildConfig.VERSION_NAME}", Item.MoreItem, listOf())
+        SettingItem<Item>(AppInfoItem.text, AppInfoItem, listOf()),
+        SettingItem<Item>(DevItem.text, DevItem, listOf()),
+        SettingItem<Item>(LanguageItem.text, LanguageItem, listOf()),
+        //SettingItem<Item>(FileItem.text, FileItem, listOf()),
+        SettingItem<Item>("v${BuildConfig.VERSION_NAME}", MoreItem, listOf())
     )
 
 private fun createSettingItemList(vararg items: Item): List<SettingItem<Item>> = items.map {
