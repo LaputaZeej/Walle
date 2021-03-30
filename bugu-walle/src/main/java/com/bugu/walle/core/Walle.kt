@@ -14,7 +14,7 @@ object Walle : LifecycleObserver {
 
     private var hdOverlay: HDOverlay? = null
 
-    private var opened = true
+    private var opened = false
 
     fun init(application: Application, configuration: Configuration? = null) {
         hdOverlay = HDOverlay(application)

@@ -3,7 +3,6 @@ package com.bugu.walle
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import com.bugu.walle.core.Walle
-import com.didichuxing.doraemonkit.DoraemonKit
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -12,10 +11,7 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        DoraemonKit.install(application,"2767c55cbc9ad07daee11e2af545ce2d");
-        //Walles.init(this)
-        //Walles.show(this)
-        //check()
+//        DoraemonKit.install(application,"2767c55cbc9ad07daee11e2af545ce2d");
         Walle.init(this@MainActivity.application)
         Walle.show(this@MainActivity)
 
@@ -50,8 +46,6 @@ class MainActivity : AppCompatActivity() {
         }
 
     }
-
-
 
 
 }

@@ -57,6 +57,17 @@ class ExampleUnitTest {
 //        debug01()
         debug02()
     }
+
+    @Test
+    fun testIndexof(){
+        val list = (1..10).toMutableList()
+        println("${list::class.java} ${list::class} ${list::class.typeParameters}")
+        val result = list.indexOf(Any())
+        list.contains(Any())
+//        val result = list.indexOf(11 as Number)
+        println("${list::class.java} ${list::class}")
+        println("result = $result")
+    }
 }
 
 sealed class A<T, R>(val t: T, val r: R) {

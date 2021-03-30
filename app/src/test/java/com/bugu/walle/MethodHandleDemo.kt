@@ -21,6 +21,10 @@ class MethodHandleDemo {
     }
 
     val s: (x: Int, y: Int) -> String = { x, y -> "$x+$y" }
+
+    fun test(){
+
+    }
 }
 
 
